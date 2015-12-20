@@ -122,6 +122,21 @@ describe("token storage", () => {
             .then(() => done(), error => done(error));
     });
 
+    it("should generate a new the token if the initial promise rejects", done => {
+        const storage = tokenStorage({
+            initialToken: Promise.reject(),
+            fetchToken: () => fetchTokenNotFound(),
+            generateToken
+        });
+
+        storage
+            .getToken()
+            .then(token => {
+                expect(token).to.be.eql(validToken);
+            })
+            .then(() => done(), error => done(error));
+    });
+
     it("should prevent race condition on getToken", done => {
         const storage = tokenStorage({
             fetchToken: onlyOnce(fetchToken)

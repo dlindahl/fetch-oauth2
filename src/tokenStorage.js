@@ -4,7 +4,9 @@ import preventRaceCondition from './utils/preventRaceCondition.js';
 
 export default function tokenStorage({initialToken, fetchToken, generateToken}) {
     let _tokenPromise = initialToken;
-    if(_tokenPromise && !(_tokenPromise instanceof Promise)) {
+    if(!_tokenPromise) {
+        _tokenPromise = Promise.resolve();
+    } else if(!(_tokenPromise instanceof Promise)) {
         _tokenPromise = Promise.resolve(initialToken);        
     }
 
@@ -12,13 +14,22 @@ export default function tokenStorage({initialToken, fetchToken, generateToken}) 
     let _generateToken = generateToken ? preventRaceCondition(generateToken) : () => Promise.reject(new Error('Generating a token on the server is not supported'));
 
     const getToken = () => {
-        if(_tokenPromise) {
-            return _tokenPromise;
-        }
         return _tokenPromise = new Promise((resolve, reject) => {
-            _fetchToken()
-                .then(resolve)
-                .catch(err => _generateToken(err).then(resolve, reject));
+            _tokenPromise
+                .then((tokens) => {
+                    if(!tokens) {
+                        reject();
+                    }
+                    return resolve(tokens);
+                })
+                .catch((err) => {
+                    if(err) {
+                        throw err;
+                    }
+                    return _fetchToken()
+                        .then(resolve)
+                        .catch(err => _generateToken(err).then(resolve, reject));
+                })
         });
     };
 
