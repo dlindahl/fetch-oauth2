@@ -37,4 +37,4 @@ node_modules
 test_server_port.json
 
 # Publishing es5 in lib
-lib
+# lib
